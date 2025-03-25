@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  VISITOR
+  ORGANISER
+}
+
+enum Sex {
+  MALE
+  FEMALE
+}
+
+model user {
+  userId            String         @id @default(uuid()) @map("_id")
+  userName          String?        @unique
+  fullName          String?
+  email             String         @unique
+  role              Role           @default(VISITOR)
+  password          String
+  bio               String?
+  phone             String?
+  sex               Sex?
+  avatar            String?
+  idFrontPic        String?
+  idBackPic         String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
+  post              post[]
+  likes             likes[]
+  savePost          savePost[]
+  comment           comment[]
+  followers         follow[]       @relation("followers")
+  following         follow[]       @relation("following")
+  message_from      message[]      @relation("message_from")
+  message_to        message[]      @relation("message_to")
+  notification_from notification[] @relation("notification_from")
+  notification_to   notification[] @relation("notification_to")
+
+
+  @@index([userName])
+}
+
+
+model post {
+  postId      String        @id @default(uuid()) @map("_id")
+  bannerPic   String?
+  description String
+  likesCount  Int?          @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+  userId      String
+  user        user          @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  likes       likes[]
+  savePost    savePost[]
+  comment     comment[]
+}
+
+model likes {
+  likesId String @id @default(uuid()) @map("_id")
+  userId  String
+  postId  String
+  user    user   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  post    post   @relation(fields: [postId], references: [postId], onDelete: Cascade)
+}
+
+model savePost {
+  savePostId String @id @default(uuid()) @map("_id")
+  userId     String
+  postId     String
+  user       user   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  post       post   @relation(fields: [postId], references: [postId], onDelete: Cascade)
+}
+
+model comment {
+  commentId String @id @default(uuid()) @map("_id")
+  userId    String
+  postId    String
+  user      user   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  post      post   @relation(fields: [postId], references: [postId], onDelete: Cascade)
+}
+
+
+
+model follow {
+  followId    String @id @default(uuid()) @map("_id")
+  followerId  String
+  followingId String
+  follower    user   @relation("followers", fields: [followerId], references: [userId], onDelete: Cascade)
+  following   user   @relation("following", fields: [followingId], references: [userId], onDelete: Cascade)
+}
+
+model message {
+  messageId    String @id @default(uuid()) @map("_id")
+  fromId       String
+  toId         String
+  content      String
+  createdAt    DateTime @default(now())
+  message_from user   @relation("message_from", fields: [fromId], references: [userId], onDelete: Cascade)
+  message_to   user   @relation("message_to", fields: [toId], references: [userId], onDelete: Cascade)
+  read         Boolean @default(false)
+}
+
+model notification {
+  notificationId    String @id @default(uuid()) @map("_id")
+  fromId            String
+  toId              String
+  content           String
+  createdAt         DateTime @default(now())
+  notification_from user   @relation("notification_from", fields: [fromId], references: [userId], onDelete: Cascade)
+  notification_to   user   @relation("notification_to", fields: [toId], references: [userId], onDelete: Cascade)
+}
